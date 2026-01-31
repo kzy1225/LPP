@@ -83,6 +83,11 @@ doxygen Doxyfile
 
 # memo
 
+## 2026-02-01
+sample24a.mplでParseError.
+
+### 実行結果
+
 E           02_pp_mm_test.ParseError: 
 E           Syntax Error at line 3: ')' expected.
 
