@@ -7,6 +7,7 @@
 #include "scan.h"
 #include <stdio.h>
 #include <string.h>
+#include <time.h>
 
 /// @brief scan() の戻り値が「符号なし整数」のとき，その値を格納している．
 int num_attr;
@@ -31,78 +32,104 @@ static int token_linenum = 0;
 /// @brief scan() が一度でも呼ばれた
 static int scan_called = 0;
 
+void debug_print_chars(int c1, int c2, int c3) {
+	/* 1. ファイルを「追加書き込みモード("a")」で開く */
+	/* ※ファイル名は任意に変更してください */
+	FILE * debug_fp = fopen("scan_trace.txt", "a");
+
+	if (debug_fp == NULL) {
+		fprintf(stderr, "Cannot open debug file.\n");
+		return;
+	}
+
+	/* 2. ファイルポインタ(fp)に対して書き込む */
+	fprintf(
+	    debug_fp, "line = %2d , chars = %10s, %10s, %10s.\n", linenum, format_char_debug(c1),
+	    format_char_debug(c2), format_char_debug(c3)
+	);
+
+	/* 3. ファイルを閉じる */
+	fclose(debug_fp);
+}
+
+char * format_char_debug(int ch) {
+	static char buf[4][32];
+	static int  idx = 0;
+	char *      p   = buf[idx++ & 3]; /* 0~3のバッファを順繰りに使う */
+
+	if (ch == EOF) {
+		snprintf(p, 32, "EOF (0xFF)");
+	} else if (ch == '\r') {
+		snprintf(p, 32, "CR  (0x0D)");
+	} else if (ch == '\n') {
+		snprintf(p, 32, "LF  (0x0A)");
+	} else if (ch == '\t') {
+		snprintf(p, 32, "TAB (0x09)");
+	} else if (ch >= 0x20 && ch <= 0x7E) {
+		snprintf(p, 32, "'%c' (0x%02X)", ch, ch);
+	} else {
+		snprintf(p, 32, "CTRL(0x%02X)", ch & 0xFF);
+	}
+	return p;
+}
+
+void debug_print(char * msg) {
+	/* 1. ファイルを「追加書き込みモード("a")」で開く */
+	/* ※ファイル名は任意に変更してください */
+	FILE * debug_fp = fopen("scan_trace.txt", "a");
+
+	if (debug_fp == NULL) {
+		fprintf(stderr, "Cannot open debug file.\n");
+		return;
+	}
+
+	/* 2. ファイルポインタ(fp)に対して書き込む */
+	fprintf(debug_fp, "%s", msg);
+
+	/* 3. ファイルを閉じる */
+	fclose(debug_fp);
+}
+
 /**
- * @brief ファイルから1文字読み込みそれを返す。必要に応じ行番号を更新する。
- * @details CR と LF をそれぞれ独立した改行として扱う
+ * @brief ファイルから1文字読み込みそれを返す。
  */
 static int raw_getchar(void) {
-	/* 新しい文字の読み込み */
-	int ch = fgetc(fp);
-	if (ch == EOF) { return EOF; }
+	return fgetc(fp);
+}
 
-	// printf("raw_getchar(); ");
-	// debug_print_chars();
+/**
+ * @brief 1文字進める。行番号を更新する。
+ * @details current_char に cbuf を代入。 cbuf に raw_getchar() を代入。改行 (end of line) に応じて行番号を更新する。1文字進める処理は行番号の処理をしてから行う。
+ */
+static void advance(void) {
+	int third_char = raw_getchar();
 
-	/* 行番号の更新: ここでは3文字連続で確認でき，それぞれcurrent_char, cbuf, ch  */
-	if (current_char == '\n' && cbuf == '\r') {
+	debug_print_chars(current_char, cbuf, third_char);
+
+	// 行番号の更新: ここでは3文字連続で確認でき，それぞれcurrent_char, cbuf, third_char  */
+	// current_char ==  && cbuf ==  && third_char ==
+	if (cbuf == '\n' && third_char == '\r' && current_char != '\r' && current_char != '\n') {
 		/* in case of LFCR ‘\n’ ‘\r’ */
-		// printf("You found LFCR.\n");
+		debug_print("LFCR found.\n");
 		linenum++;
-		linenum++;
-	} else if (current_char == '\r' && cbuf == '\n') {
+		// linenum++;
+	} else if (cbuf == '\r' && third_char == '\n' && current_char != '\r' && current_char != '\n') {
 		/* in case of CRLF ‘\r’ ‘\n’ */
-		// printf("You found CRLF.\n");
+		debug_print("CRLF found.\n");
 		linenum++;
-	} else if (current_char == '\r') {
+		// linenum++;
+	} else if (cbuf == '\r' && current_char != '\r' && current_char != '\n') {
 		/* in case of CR ‘\r’ */
-		// printf("You found CR.\n");
+		debug_print("CR found.\n");
 		linenum++;
-	} else if (current_char == '\n') {
+	} else if (cbuf == '\n' && current_char != '\r' && current_char != '\n') {
 		/* in case of LF ‘\n’ */
-		// printf("You found LF.\n");
+		debug_print("LF found.\n");
 		linenum++;
 	}
 
-	return ch;
-}
-
-/**
- * @brief 1文字進める
- * @details current_char に cbuf を代入。 cbuf に raw_getchar() を代入。
- */
-static void advance(void) {
 	current_char = cbuf;
-	cbuf         = raw_getchar();
-	// print debug
-	// debug_print_chars();
-}
-
-/**
- * @brief デバッグ用関数
- * @details linenum, current_char, cbuf の内容を表示
- */
-void debug_print_chars(void) {
-	char cc[32], cb[32];
-
-#define SHOW(buf, ch) \
-	if ((ch) == EOF) \
-		snprintf(buf, sizeof(buf), "EOF   (0xFF)"); \
-	else if ((ch) == '\r') \
-		snprintf(buf, sizeof(buf), "CR    (0x0D)"); \
-	else if ((ch) == '\n') \
-		snprintf(buf, sizeof(buf), "LF    (0x0A)"); \
-	else if ((ch) == '\t') \
-		snprintf(buf, sizeof(buf), "TAB   (0x09)"); \
-	else if ((ch) >= 0x20 && (ch) <= 0x7E) \
-		snprintf(buf, sizeof(buf), "'%c'   (0x%02X)", (ch), (unsigned char)(ch)); \
-	else \
-		snprintf(buf, sizeof(buf), "CTRL  (0x%02X)", (unsigned char)(ch));
-
-	SHOW(cc, current_char);
-	SHOW(cb, cbuf);
-
-	printf("linenum = %2d, current_char = %-14s, cbuf = %-14s\n", linenum, cc, cb);
-#undef SHOW
+	cbuf         = third_char;
 }
 
 /**
@@ -178,9 +205,12 @@ int init_scan(char * filename) {
 	current_char = raw_getchar();
 	cbuf         = raw_getchar();
 
-	// print debug
-	// printf("Start of scan.\n");
-	// debug_print_chars();
+	/* debug file initialize */
+	FILE * debug_fp = fopen("scan_trace.txt", "w");
+	if (debug_fp == NULL) { return 0; }
+	time_t now = time(NULL);
+	fprintf(debug_fp, "SCANNING %s, %s\n", filename, ctime(&now));
+	fclose(debug_fp);
 
 	return 0;
 }
@@ -278,10 +308,12 @@ int scan(void) {
 				/* Two consecutive single quotes or string must be escaped */
 				if (current_char == '\'') {
 					if (cbuf == '\'') {
+						debug_print("Two consecutive single quotes found.\n");
 						if (len >= MAXSTRSIZE - 1) {
 							error("String literal too long.");
 							return S_ERROR;
 						}
+						string_attr[len++] = '\'';
 						string_attr[len++] = '\'';
 						advance();
 						advance();
@@ -352,69 +384,45 @@ int scan(void) {
 
 		/* 記号類 */
 		switch (current_char) {
-		case ':':
-			advance();
-			if (current_char == '=') {
+			case ':':
 				advance();
-				return TASSIGN;
-			}
-			return TCOLON;
-		case '<':
-			if (cbuf == '=') {
+				if (current_char == '=') {
+					advance();
+					return TASSIGN;
+				}
+				return TCOLON;
+			case '<':
+				if (cbuf == '=') {
+					advance();
+					advance();
+					return TLEEQ;
+				}
+				if (cbuf == '>') {
+					advance();
+					advance();
+					return TNOTEQ;
+				}
 				advance();
+				return TLE;
+			case '>':
 				advance();
-				return TLEEQ;
-			}
-			if (cbuf == '>') {
-				advance();
-				advance();
-				return TNOTEQ;
-			}
-			advance();
-			return TLE;
-		case '>':
-			advance();
-			if (current_char == '=') {
-				advance();
-				return TGREQ;
-			}
-			return TGR;
-		case '+':
-			advance();
-			return TPLUS;
-		case '-':
-			advance();
-			return TMINUS;
-		case '*':
-			advance();
-			return TSTAR;
-		case '=':
-			advance();
-			return TEQUAL;
-		case '(':
-			advance();
-			return TLPAREN;
-		case ')':
-			advance();
-			return TRPAREN;
-		case '[':
-			advance();
-			return TLSQPAREN;
-		case ']':
-			advance();
-			return TRSQPAREN;
-		case '.':
-			advance();
-			return TDOT;
-		case ',':
-			advance();
-			return TCOMMA;
-		case ';':
-			advance();
-			return TSEMI;
-		default:
-			error("Unknown character.");
-			return S_ERROR;
+				if (current_char == '=') {
+					advance();
+					return TGREQ;
+				}
+				return TGR;
+			case '+': advance(); return TPLUS;
+			case '-': advance(); return TMINUS;
+			case '*': advance(); return TSTAR;
+			case '=': advance(); return TEQUAL;
+			case '(': advance(); return TLPAREN;
+			case ')': advance(); return TRPAREN;
+			case '[': advance(); return TLSQPAREN;
+			case ']': advance(); return TRSQPAREN;
+			case '.': advance(); return TDOT;
+			case ',': advance(); return TCOMMA;
+			case ';': advance(); return TSEMI;
+			default: error("Unknown character."); return S_ERROR;
 		}
 	}
 }
