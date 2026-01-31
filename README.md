@@ -11,7 +11,7 @@
 # コマンド一覧
 
 Original shellscript:
-./run_tests_kadai2.sh sample24a.mpl
+./run_test_kadai2.sh sample24a.mpl
 
 
 
