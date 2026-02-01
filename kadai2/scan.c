@@ -43,9 +43,12 @@ void debug_print_chars(int c1, int c2, int c3) {
 	}
 
 	/* 2. ファイルポインタ(fp)に対して書き込む */
+	const char *s1 = format_char_debug(c1);
+const char *s2 = format_char_debug(c2);
+const char *s3 = format_char_debug(c3);
+
 	fprintf(
-	    debug_fp, "line = %2d , chars = %10s, %10s, %10s.\n", linenum, format_char_debug(c1),
-	    format_char_debug(c2), format_char_debug(c3)
+	    debug_fp, "line = %2d , chars = %10s, %10s, %10s.\n", linenum, s1,s2,s3
 	);
 
 	/* 3. ファイルを閉じる */
