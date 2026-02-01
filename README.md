@@ -9,77 +9,28 @@
 
 
 # コマンド一覧
+| genre | command | simple explanation of command |
+|------|---------|--------------------------------|
+| File viewing | `tail -n +1 sample22.mpl` | Display the contents of multiple files (show from the first line) |
+| Testing | `lpptest 01test -vv -x` | Run lpptest and stop testing immediately when an error occurs |
+| Testing | `lpptest 01test -vv -k sample12lf.mpl` | Execute tests of kadai1 for a specific sample file |
+| Execution | `./tc ./testcases/sample011.mpl` | Execute program for assignment 1 |
+| Execution | `./pp ./testcases/sample2a.mpl` | Execute program for assignment 2 |
+| Environment | `lppshell` | Start the docker image |
+| Build | `gcc *.c -o tc` | Compile all C files into an executable named tc |
+| Build | `make` | Build the project using the Makefile |
+| Build | `make clean && make` | Clean build files and recompile from scratch |
+| Directory | `cd /home/kzy/KIT_32/12_LPP/kadai2` | Change current directory |
+| Archive | `zip kadai.zip *.c *.h` | Create a zip archive containing C and header files |
+| Archive | `zip kadai.zip *.c *.h makefile` | Create a zip archive including the Makefile |
+| File operation | `cp scan.c main.c scan.h id-list.c id-list.h makefile /home/kzy/KIT_32/12_LPP/kadai2` | Copy files to the specified directory |
+| File operation | `touch parser.h pretty.h pretty.c parser.c` | Create empty files |
+| Coverage (gcov) | `make gcov` | Build the program with gcov (coverage) enabled |
+| Coverage (gcov) | `./tc ../kadai1_testing/sample11pp.mpl` | Execute the program to generate coverage data |
+| Coverage (gcov) | `gcov -b *.gcda` | Run gcov and output execution counts per line into `.gcov` files |
+| Documentation | `doxygen -g` | Generate a default Doxygen configuration file |
+| Documentation | `doxygen Doxyfile` | Generate documentation using Doxygen |
 
-Original shellscript:
-./run_test_kadai2.sh sample24a.mpl
-
-
-
-Execute test:
-lpptest 01test -vv
-
-Show contents of *.mpl:
-cat -n ./testcases/sample011.mpl
-
-複数のファイルの中身を表示:
-tail -n +1 sample22.mpl
-
-lpptest に-x オプションを付けると，エラーが出た時点で以後のテストを中止します．:
-lpptest 01test -vv -x
-
-Execute test of kadai1 for each sample:
-lpptest 01test -vv -k sample12lf.mpl
-
-
-実行(課題1):
-./tc ./testcases/sample011.mpl
-
-実行(課題2):
-./pp ./testcases/sample2a.mpl
-
-
-
-dockerイメージの起動:
-lppshell
-
-Compile:
-gcc *.c -o tc
-または
-make
-または
-make clean && make
-
-current dir:
-cd /home/kzy/KIT_32/12_LPP/kadai2
-
-zip圧縮:
-zip kadai.zip *.c *.h 
-または
-zip kadai.zip *.c *.h makefile
-
-
-copy files and directories:
-cp scan.c main.c scan.h id-list.c id-list.h makefile  /home/kzy/KIT_32/12_LPP/kadai2
-
-Make empty files:
-touch parser.h pretty.h pretty.c parser.c
-
-
-## gcov
-
-(1) gcov ビルド
-(2) 実行する。何を何回でも。
-(3) gcov 実行。各行に何回通ったかが「[filename].gcov」に表示される。
-
-make gcov
-./tc ../kadai1_testing/sample11pp.mpl
-gcov -b *.gcda
-
-
-
-## Doxygen
-doxygen -g
-doxygen Doxyfile
 
 # memo
 
@@ -87,7 +38,7 @@ doxygen Doxyfile
 sample24a.mplでParseError.
 
 ### 実行結果
-
+```
 E           02_pp_mm_test.ParseError: 
 E           Syntax Error at line 3: ')' expected.
 
@@ -113,4 +64,4 @@ Syntax Error at line 3: ')' expected.
      3	begin a := 1;writeln(a); writeln('''':3) end.
 
 kzy@Pvln:~/KIT_32/12_LPP/kadai2$ 
-
+```
