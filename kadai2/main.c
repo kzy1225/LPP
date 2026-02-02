@@ -53,11 +53,15 @@ char * tokenstr[NUMOFTOKEN + 1]
        ">",      ">=",     "(",         ")",       "[",       "]",      ":=",      ".",    ",",
        ":",      ";",      "read",      "write",   "break"};
 
-/* 外部エラー関数（scan.cなどで使用する場合、ここで定義が必要なら定義する） */
-// int error(char *mes) {
-// fprintf(stderr, "Error: %s\n", mes);
-// return S_ERROR;
-// }
+
+/* error() が scan.c から呼ばれる場合 */
+int error(char * mes) {
+	fprintf(stderr, "\nSyntax Error scan at line %d: %s\n", get_linenum(), mes);
+	// fprintf(stderr, "Error: %s\n", mes);
+	/* 構文解析エラーの場合は S_ERROR を返す設計なら return S_ERROR; */
+	/* ここでは致命的エラーとして終了する場合 */
+	exit(1);
+}
 
 int main(int argc, char * argv[]) {
 	if (argc < 2) {
@@ -65,26 +69,24 @@ int main(int argc, char * argv[]) {
 		return -1;
 	}
 
+	/* 1. スキャナ初期化 */
 	if (init_scan(argv[1]) < 0) {
 		fprintf(stderr, "Cannot open file: %s\n", argv[1]);
 		return -1;
 	}
 
-	token = scan(); /* 最初のトークン取得 */
+	/* 2. 最初のトークン取得 (sscmain.cでも同様に行っている) */
+	token = scan();
 
-    // for (size_t i = 0; i < 70; i++)
-    // {
-    //     	printf("%s", "=");
-    // }
-
-	// printf("token: %s\n", tokenstr[token]);
-
-	if (parse_program() == S_ERROR) {
+	/* 3. 構文解析実行 (parse_program が起点) */
+	if (parse_program() == ERROR) {
+		/* エラーメッセージは parse.c 内で出力済み */
 		end_scan();
 		return -1;
 	}
 
+	/* 4. 終了処理 */
 	end_scan();
-	printf("OK\n");
+	// printf("\nOK\n"); /* 最後に改行と成功メッセージ */
 	return 0;
 }

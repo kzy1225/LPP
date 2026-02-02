@@ -5,12 +5,15 @@
 #ifndef PARSE_H
 #define PARSE_H
 
+#include "scan.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include "scan.h"
+#include <stdarg.h> /* 可変長引数のために必要 */
 
 #define NORMAL 0
 #define ERROR  1
+#define FALSE  0
+#define TRUE   1
 
 /* 現在のトークンコード */
 extern int token;

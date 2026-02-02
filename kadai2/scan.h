@@ -112,5 +112,11 @@ extern void end_scan(void);
 
 extern int  num_attr;
 extern char string_attr[MAXSTRSIZE];
+extern int linenum;
+
+extern char * format_char_debug(int ch);
+extern void debug_print_chars(int c1, int c2, int c3);
+extern void debug_print(const char * msg);
+
 
 #endif

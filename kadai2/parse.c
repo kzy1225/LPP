@@ -118,7 +118,7 @@ static void print_indent(void) {
 }
 
 static int output_token(void) {
-	char const * str = get_token_string(token);
+	const char * str = get_token_string(token);
 	debug_print("Output token: ");
 	debug_print(str);
 	debug_print("\n");
