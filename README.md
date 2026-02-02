@@ -11,9 +11,12 @@
 # コマンド一覧
 | genre | command | simple explanation of command |
 |------|---------|--------------------------------|
-| File viewing | `tail -n +1 sample22.mpl` | Display the contents of multiple files (show from the first line) |
-| Testing | `lpptest 01test -vv -x` | Run lpptest and stop testing immediately when an error occurs |
+| Testing | `lpptest 01test -vv` | Execute tests of kadai1 |
 | Testing | `lpptest 01test -vv -k sample12lf.mpl` | Execute tests of kadai1 for a specific sample file |
+| Testing | `lpptest 01test -vv -x` | Run lpptest and stop testing immediately when an error occurs |
+| Testing | `lpptest 02test -vv` | Execute tests of kadai2 |
+| Testing | `lpptest 02test -vv -k sample12lf.mpl` | Execute tests of kadai2 for a specific sample file |
+| Testing | `lpptest 02test -vv -x` | Run lpptest and stop testing immediately when an error occurs |
 | Execution | `./tc ./testcases/sample011.mpl` | Execute program for assignment 1 |
 | Execution | `./pp ./testcases/sample2a.mpl` | Execute program for assignment 2 |
 | Environment | `lppshell` | Start the docker image |
@@ -21,6 +24,7 @@
 | Build | `make` | Build the project using the Makefile |
 | Build | `make clean && make` | Clean build files and recompile from scratch |
 | Directory | `cd /home/kzy/KIT_32/12_LPP/kadai2` | Change current directory |
+| File viewing | `tail -n +1 sample22.mpl` | Display the contents of multiple files (show from the first line) |
 | Archive | `zip kadai.zip *.c *.h` | Create a zip archive containing C and header files |
 | Archive | `zip kadai.zip *.c *.h makefile` | Create a zip archive including the Makefile |
 | File operation | `cp scan.c main.c scan.h id-list.c id-list.h makefile /home/kzy/KIT_32/12_LPP/kadai2` | Copy files to the specified directory |
