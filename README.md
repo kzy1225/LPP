@@ -11,6 +11,7 @@
 # コマンド一覧
 | genre | command | simple explanation of command |
 |------|---------|--------------------------------|
+| general | `./run_test_kadai2/sh sample22.mpl` | Execute specific test, run, and show contents of it  |
 | Testing | `lpptest 01test -vv` | Execute tests of kadai1 |
 | Testing | `lpptest 01test -vv -k sample12lf.mpl` | Execute tests of kadai1 for a specific sample file |
 | Testing | `lpptest 01test -vv -x` | Run lpptest and stop testing immediately when an error occurs |
