@@ -4,33 +4,66 @@
  * @author 23122013
  * @date 2026-01-20
  */
-#include "scan.h"
-#include "parse.h"
 #include "id-list.h"
+#include "parse.h"
+#include "scan.h"
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
 
 
+FILE * debug_fp = NULL;
+#define DEBUG_FILE "scan_trace.txt"
+
+
+void open_debug_file(void) {
+	debug_fp = fopen(DEBUG_FILE, "a");
+	if (debug_fp == NULL) {
+		fprintf(stderr, "Cannot open debug file.\n");
+		return;
+	}
+}
+
+void close_debug_file(void) {
+	fclose(debug_fp);
+}
+
+void init_debug_file(char * filename) {
+	debug_fp = fopen(DEBUG_FILE, "w");
+	if (debug_fp == NULL) {
+		fprintf(stderr, "Cannot open debug file.\n");
+		return;
+	}
+	time_t now = time(NULL);
+	fprintf(debug_fp, "SCANNING %s, %s\n", filename, ctime(&now));
+	close_debug_file();
+}
+
+void debug_print_int_ch(int i, char const * msg) {
+	open_debug_file();
+
+	fprintf(debug_fp, "%2d, %10s\n", i, msg);
+
+	close_debug_file();
+}
+
 void debug_print_chars(int c1, int c2, int c3) {
-	FILE * debug_fp = fopen("scan_trace.txt", "a");
+	open_debug_file();
+
 	if (debug_fp == NULL) {
 		fprintf(stderr, "Cannot open debug file.\n");
 		return;
 	}
 
-	 char *s1 = format_char_debug(c1);
-	 char *s2 = format_char_debug(c2);
-	 char *s3 = format_char_debug(c3);
+	char * s1 = format_char_debug(c1);
+	char * s2 = format_char_debug(c2);
+	char * s3 = format_char_debug(c3);
 
-	fprintf(
-	    debug_fp,
-	    "line = %2d , chars = %10s, %10s, %10s.\n",
-	    linenum, s1, s2, s3
-	);
+	fprintf(debug_fp, "line = %2d , chars = %10s, %10s, %10s.\n", linenum, s1, s2, s3);
 
-	fclose(debug_fp);
+	close_debug_file();
 }
+
 char * format_char_debug(int ch) {
 	static char buf[4][32];
 	static int  idx = 0;
@@ -52,19 +85,14 @@ char * format_char_debug(int ch) {
 	return p;
 }
 
-void debug_print(const char * msg) {
-	/* 1. ファイルを「追加書き込みモード("a")」で開く */
-	/* ※ファイル名は任意に変更してください */
-	FILE * debug_fp = fopen("scan_trace.txt", "a");
+void debug_print(char const * msg) {
+	debug_fp = fopen(DEBUG_FILE, "a");
 
 	if (debug_fp == NULL) {
 		fprintf(stderr, "Cannot open debug file.\n");
 		return;
 	}
 
-	/* 2. ファイルポインタ(fp)に対して書き込む */
 	fprintf(debug_fp, "%s", msg);
-
-	/* 3. ファイルを閉じる */
-	fclose(debug_fp);
+	close_debug_file();
 }
