@@ -21,4 +21,5 @@ extern int token;
 /* 構文解析のエントリーポイント */
 int parse_program(void);
 
+
 #endif /* PARSE_H */

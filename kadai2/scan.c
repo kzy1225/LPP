@@ -33,8 +33,6 @@ static int token_linenum = 0;
 /// @brief scan() が一度でも呼ばれた
 static int scan_called = 0;
 
-
-
 /**
  * @brief ファイルから1文字読み込みそれを返す。
  */
@@ -183,25 +181,109 @@ int get_linenum(void) {
 }
 
 /**
+ * @brief 文字列リテラルを読み取る
+ *        string ::= "'" { string_element | "''" } "'"
+ * @return TSTRING or S_ERROR
+ */
+static int scan_string(void) {
+	debug_print("scan_string() called.\n");
+	int len         = 0;  // string_attr 用
+	int logical_len = 0;  // 文字列の「長さ」（{} の回数）
+
+	token_linenum = linenum;
+
+	/* 先頭の ' は scan() 側で確認済み */
+	advance();  // 開始 '
+
+	/* {}の中身を確認 */
+	while (1) {
+		debug_print("scan_string(): scanning...\n");
+		/* EOF */
+		if (current_char == EOF) {
+			error("String not closed.");
+			return S_ERROR;
+		}
+
+		/* 改行は禁止 */
+		if (current_char == '\n' || current_char == '\r') {
+			error("Newline in string literal.");
+			return S_ERROR;
+		}
+
+		/* 2連続アポストロフィー */
+		if (current_char == '\'' && cbuf == '\'') {
+			string_attr[len++] = '\'';
+			string_attr[len++] = '\'';
+			logical_len++;
+			advance();
+			advance();
+			continue;
+		}
+
+		/* string element: アポストロフィ，改行以外の任意の表示文字*/
+		if (current_char != '\'' && current_char != '\n' && current_char != '\r') {
+			string_attr[len++] = current_char;
+			logical_len++;
+
+			advance();
+			continue;
+		}
+
+		/* 長さ確認 */
+		if (logical_len >= MAXSTRSIZE - 1) {
+			error("String literal too long.");
+			return S_ERROR;
+		}
+
+		/* 終端のアポストロフィ */
+		if (current_char == '\'') {
+			// string_attr[len++] = current_char;
+			break;
+		}
+
+		advance();
+	}
+
+	/* 終端 */
+	string_attr[len] = '\0';
+
+	char msg[1024];
+	snprintf(msg, sizeof(msg), "scan_string(): string scanned: %s, %d\n", string_attr, logical_len);
+	debug_print(msg);
+
+	return TSTRING;
+}
+
+/**
  * @brief スキャナ本体
  * @details トークンを1つ読み取り，そのトークンを返す
  * @return int トークンまたは-1（EOF），S_ERROR（エラー）
  */
 int scan(void) {
+	char msg[128];
+	snprintf(msg, sizeof(msg), "scan() called. linenum = %d\n", linenum);
+	debug_print(msg);
+
 	while (1) {
-		/* EOF : これ以上トークンは存在しない */
+		/* ============================================================
+		 * EOF : これ以上トークンは存在しない */
+		/* ============================================================ */
 		if (current_char == EOF) {
 			scan_called = 1;
 			return -1;
 		}
 
-		/* 分離子: 読み飛ばす（空白・改行・EOF） */
+		/* ============================================================
+		 * 分離子: 空白・改行・EOF を読み飛ばす
+		 * ============================================================ */
 		if (isSeparator(current_char)) {
 			advance();
 			continue;
 		}
 
-		/* { ... } コメント: 全体を読み飛ばす */
+		/* ============================================================
+		 * { ... } コメント: 全体を読み飛ばす
+		 * ============================================================ */
 		if (current_char == '{') {
 			advance();
 			while (current_char != EOF && current_char != '}') {
@@ -212,6 +294,9 @@ int scan(void) {
 			continue;
 		}
 
+		/* ============================================================
+		 * / / コメント: 全体を読み飛ばす
+		 * ============================================================ */
 		if (current_char == '/' && cbuf == '*') {
 			advance();
 			advance();
@@ -226,71 +311,24 @@ int scan(void) {
 			continue;
 		}
 
-		/* 文字列: '...' を STRING トークンとして読み取る */
+		/* ============================================================
+		 * 文字列: '...' を STRING トークンとして読み取る。
+		 * 文字列 (string) ::= "’" { 文字列要素 | "’" "’" } "’"
+		 * 文字列要素 (string element)：アポストロフィ"’"，改行以外の任意の表示文字
+		 * ============================================================ */
 		if (current_char == '\'') {
-			// Firstly single quote found
-			int len       = 0;
-			token_linenum = linenum;
-
-			// Debug print
-			// printf("String literal starts at line %d.\n", token_linenum);
-
-			advance();
-
-			while (1) {
-				/* EOF */
-				if (current_char == EOF) {
-					error("String not closed.");
-					return S_ERROR;
-				}
-
-				/* 文字列中の改行は禁止 */
-				if (current_char == '\n' || current_char == '\r') {
-					error("Newline in string literal.");
-					return S_ERROR;
-				}
-
-				/* Two consecutive single quotes or string must be escaped */
-				if (current_char == '\'') {
-					if (cbuf == '\'') {
-						debug_print("Two consecutive single quotes found.\n");
-						if (len >= MAXSTRSIZE - 1) {
-							error("String literal too long.");
-							return S_ERROR;
-						}
-						string_attr[len++] = '\'';
-						string_attr[len++] = '\'';
-						advance();
-						advance();
-						continue;
-					} else {
-						break;
-					}
-				}
-
-				/* 長さ制限チェック */
-				if (len >= MAXSTRSIZE - 1) {
-					error("String literal too long.");
-					return S_ERROR;
-				}
-
-				string_attr[len++] = current_char;
-				advance();
-			}
-
-			/* 終端処理 */
-			string_attr[len] = '\0';
-
-			advance();
-
-			return TSTRING;
+			/* First single quote found */
+			debug_print("scan(): First single quote found.\n");
+			return scan_string();
 		}
 
 		/* token started */
 		token_linenum = linenum;
 		scan_called   = 1;
 
-		/* 識別子 / キーワード */
+		/* ============================================================
+		 * キーワード
+		 * ============================================================ */
 		if (isAlpha(current_char)) {
 			int i = 0;
 			while (current_char != EOF && isAlphaNum(current_char)) {

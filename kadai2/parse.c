@@ -99,6 +99,7 @@ static char const * get_token_string(int code) {
 
 static int error_msg(char * mes) {
 	fprintf(stderr, "\nSyntax Error at line %d: %s\n", get_linenum(), mes);
+	debug_print("Error occurred.\n");
 	return ERROR;
 }
 
@@ -118,10 +119,12 @@ static void print_indent(void) {
 }
 
 static int output_token(void) {
-	const char * str = get_token_string(token);
-	debug_print("Output token: ");
-	debug_print(str);
-	debug_print("\n");
+	char const * str = get_token_string(token);
+
+	char msg[128];
+	snprintf(msg, sizeof(msg), "output_token(): %s\n", str);
+	debug_print(msg);
+
 	if (token == TSTRING) {
 		print_indent();
 		if (space_pending) printf(" ");
@@ -179,7 +182,7 @@ static int parse_block(void) {
 /* 3. variable_declaration ::= "var" variable_names ":" type ";" { variable_names ":" type ";" } */
 static int parse_variable_declaration(void) {
 	debug_print("parse_variable_declaration() called.\n");
-	indent_level=1;
+	indent_level = 1;
 	output_token(); /* var */
 	print_newline();
 	token = scan();
@@ -564,7 +567,10 @@ static int parse_factor(void) {
 			output_token();
 			token = scan();
 			if (parse_expression() == ERROR) return ERROR;
-			if (token != TRPAREN) return error_msg("')' expected.");
+			if (token != TRPAREN) {
+				debug_print("parse_factor(): TRPAREN, Missing ')'.\n");
+				return error_msg("')' expected.");
+			}
 			output_token();
 			token = scan();
 			return NORMAL;
@@ -581,7 +587,9 @@ static int parse_factor(void) {
 			output_token();
 			token = scan();
 			if (parse_expression() == ERROR) return ERROR;
-			if (token != TRPAREN) return error_msg("')' expected.");
+			if (token != TRPAREN) { 
+				debug_print("parse_factor(): TRPAREN, Missing ')'.\n");
+				return error_msg("')' expected.");}
 			output_token();
 			token = scan();
 			return NORMAL;
@@ -591,10 +599,17 @@ static int parse_factor(void) {
 
 /* 16. output_format ::= expression [ ":" number ] | "long_string" */
 static int parse_output_format(void) {
-	debug_print("parse_program() called.\n");
+	debug_print("parse_output_format() called.\n");
 	/* EBNF: 文字列の長さが1以外(2以上)なら文字列として扱う */
-	if (token == TSTRING && (int)strlen(string_attr) > 1) {
+	if (token == TSTRING && (int)strlen(string_attr) != 1) {
+		debug_print("parse_output_format(): Long string detected.\n");
+
+		char msg[128];
+		snprintf(msg, sizeof(msg), "parse_output_format(): str, len = %s, %d\n", string_attr,(int)strlen(string_attr));
+		debug_print(msg);
+
 		output_token();
+		debug_print("parse_output_format(): Long string output done.\n");
 		token = scan();
 	} else {
 		if (parse_expression() == ERROR) return ERROR;
